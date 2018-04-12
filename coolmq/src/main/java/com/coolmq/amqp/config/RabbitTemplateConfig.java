@@ -1,5 +1,8 @@
 package com.coolmq.amqp.config;
 
+import com.coolmq.amqp.util.MQConstants;
+import com.coolmq.amqp.util.RabbitMetaMessage;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -10,20 +13,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.scheduling.annotation.Async;
-
-import com.coolmq.amqp.util.MQConstants;
-import com.coolmq.amqp.util.RabbitMetaMessage;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.aopalliance.aop.Advice;
-
 
 
 /**
  * <p><b>Description:</b> RabbitTemplate配置工厂类
- * <p><b>Company:</b> 
+ * <p><b>Company:</b>
  *
  * @author created by hongda at 11:33 on 2017-07-05
  * @version V0.1
@@ -31,14 +25,14 @@ import org.aopalliance.aop.Advice;
 @Configuration
 @ComponentScan
 public class RabbitTemplateConfig {
-	 private Logger logger = LoggerFactory.getLogger(RabbitTemplateConfig.class);
-	 private ObjectMapper objectMapper = new ObjectMapper();
+    private Logger logger = LoggerFactory.getLogger(RabbitTemplateConfig.class);
+    private ObjectMapper objectMapper = new ObjectMapper();
 
-     @Autowired
-     private RedisTemplate<String, Object> redisTemplate;	
-	 
-     @Bean
-     public RabbitTemplate customRabbitTemplate(ConnectionFactory connectionFactory) {
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @Bean
+    public RabbitTemplate customRabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(jackson2JsonMessageConverter());
         // mandatory 必须设置为true，ReturnCallback才会调用
@@ -54,7 +48,7 @@ public class RabbitTemplateConfig {
             if (ack) {
                 if (!metaMessage.isReturnCallback()) {
                     logger.info("消息已正确投递到队列，correlationData:{}", correlationData);
-                    	// 清除重发缓存
+                    // 清除重发缓存
                     redisTemplate.opsForHash().delete(MQConstants.MQ_PRODUCER_RETRY_KEY, cacheKey);
                 } else {
                     logger.warn("交换机投机消息至队列失败，correlationData:{}", correlationData);
@@ -64,10 +58,10 @@ public class RabbitTemplateConfig {
                 if (!metaMessage.isAutoTrigger()) {
                     metaMessage.setAutoTrigger(true);
                     try {
-						redisTemplate.opsForHash().put(MQConstants.MQ_PRODUCER_RETRY_KEY, cacheKey, objectMapper.writeValueAsString(metaMessage));
-					} catch (Exception e) {
-						logger.error("删除redis重发缓存失败");
-					}
+                        redisTemplate.opsForHash().put(MQConstants.MQ_PRODUCER_RETRY_KEY, cacheKey, objectMapper.writeValueAsString(metaMessage));
+                    } catch (Exception e) {
+                        logger.error("删除redis重发缓存失败");
+                    }
                 }
             }
         });
@@ -88,10 +82,10 @@ public class RabbitTemplateConfig {
         });
         return rabbitTemplate;
     }
-	 
-	 @Bean
-     public Jackson2JsonMessageConverter jackson2JsonMessageConverter() {
+
+    @Bean
+    public Jackson2JsonMessageConverter jackson2JsonMessageConverter() {
         Jackson2JsonMessageConverter jsonMessageConverter = new Jackson2JsonMessageConverter();
         return jsonMessageConverter;
-     }
+    }
 }
